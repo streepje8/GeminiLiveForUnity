@@ -122,7 +122,8 @@ Please fork the repository, create a feature branch, and submit a pull request w
 
 ## 📄 License
 
-This project is licensed under the BSL license — see the LICENSE.md file for more details.
+This project is licensed under the BSL license — see the LICENSE.md file for more details.  
+TLDR: Personal use = You can use it for free, Commercial use = Ask me first. After 01/01/2028 the license changes to MIT.
 ---
 
 ### ⭐️ Quick Summary
