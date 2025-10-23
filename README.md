@@ -124,12 +124,14 @@ Please fork the repository, create a feature branch, and submit a pull request w
 
 This project is licensed under the BSL license — see the LICENSE.md file for more details.  
   
-In short: For personal use you can use it for free, for Commercial use ask me first. When in doubt, ask.  
+In short: For personal use you can use it for free, for commercial use ask me first. When in doubt, ask.  
 After 01/01/2028 the license changes to MIT.
 
 ---
 
-### ⭐️ Quick Summary
+## 💖 Acknowledgements
 
-> **Gemini Live for Unity** provides a simple and flexible way to connect Unity apps to Google’s Gemini Live API — with full support for text and audio responses and real-time streaming via websockets.
+This project was **generously funded by [Dylan from Dunk Technologies](https://www.linkedin.com/in/smitdylan/?originalSubdomain=nl)**.
+Definitely check them out — their support made this integration possible!
+
 ---
