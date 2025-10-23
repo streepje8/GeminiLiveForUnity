@@ -131,7 +131,7 @@ After 01/01/2028 the license changes to MIT.
 
 ## 💖 Acknowledgements
 
-This project was **generously funded by [Dylan from Dunk Technologies](https://www.linkedin.com/in/smitdylan/?originalSubdomain=nl)**.
+This project was **generously funded by [Dylan from Dunk Technologies](https://www.linkedin.com/in/smitdylan)**.
 Definitely check them out — their support made this integration possible!
 
 ---
