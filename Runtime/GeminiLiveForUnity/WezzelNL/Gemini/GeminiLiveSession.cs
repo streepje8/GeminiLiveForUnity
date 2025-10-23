@@ -22,19 +22,18 @@ namespace WezzelNL.Gemini
         public ClientWebSocket Socket { get; private set; }
         public bool SessionActive { get; private set; }
         public SessionState SessionState { get; private set; } = SessionState.NotConnected;
-        public GeminiLiveConfiguration Configuration { get; private set; } = GeminiLiveConfiguration.Default;
+        public GeminiLiveConfiguration Configuration { get; private set; }
         public delegate void ExceptionHandlerFunction(GeminiLiveException exception);
         public ExceptionHandlerFunction ExceptionHandler { get; set; } = Debug.LogException;
 
         private GeminiAccessToken AccessToken { get; }
         private static readonly string WebsocketUri = "wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent";
 
-        public GeminiLiveSession(GeminiAccessToken accessToken)
+        public GeminiLiveSession(GeminiAccessToken accessToken, GeminiLiveConfiguration? configuration = null)
         {
+            Configuration = configuration ?? GeminiLiveConfiguration.Default;
             AccessToken = accessToken;
         }
-
-        public void Configure(GeminiLiveConfiguration configuration) => Configuration = configuration;
 
         public async Task StartSessionAsync(CancellationToken ct)
         {

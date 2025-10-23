@@ -13,7 +13,7 @@ public class IntegrationExample : MonoBehaviour
     
     void OnEnable()
     {
-        Session = new GeminiLiveSession(GeminiAccessToken.Create(ApiKey));
+        Session = new GeminiLiveSession(GeminiAccessToken.Create(ApiKey), Configuration);
         Session.AddListener<GeminiSessionInteractionEvent>(HandleInteractionAsync);
         Session.AddListener<GeminiTranscribeEvent>(HandleTranscriptionAsync);
         Session.AddListener<GeminiServerClosedSessionEvent>(HandleServerClosure);

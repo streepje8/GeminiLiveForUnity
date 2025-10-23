@@ -5,7 +5,7 @@ namespace WezzelNL.Gemini
 {
 
     [Serializable]
-    public class GeminiLiveConfiguration
+    public struct GeminiLiveConfiguration
     {
         [field: SerializeField]public GeminiBiDirectionalModel Model { get; set; }
         [field: SerializeField]public GenerationConfiguration GenerationConfiguration { get; set; }
