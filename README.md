@@ -122,7 +122,7 @@ Please fork the repository, create a feature branch, and submit a pull request w
 
 ## 📄 License
 
-This project is open source under the MIT license — see the LICENSE.md file for more details.
+This project is licensed under the BSL license — see the LICENSE.md file for more details.
 ---
 
 ### ⭐️ Quick Summary
