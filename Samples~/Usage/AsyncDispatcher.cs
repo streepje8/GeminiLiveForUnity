@@ -1,6 +1,8 @@
-﻿using System.Runtime.ExceptionServices;
+﻿using System;
+using System.Runtime.ExceptionServices;
 using System.Threading;
 using System.Threading.Tasks;
+using UnityEngine;
 
 namespace WezzelNL.Util
 {
@@ -8,22 +10,35 @@ namespace WezzelNL.Util
     {
         public delegate Task AsyncFunction(CancellationToken ct = default);
 
-        public static void DispatchNonBlocking(AsyncFunction function, CancellationToken ct = default)
+        public static async void DispatchNonBlocking(AsyncFunction function, CancellationToken ct = default)
         {
-            function(ct).ContinueWith(t =>
+            try { await function(ct); }
+            catch (Exception e)
             {
-                //Collect exceptions and rethrow on main thread
-                if (t.IsCompletedSuccessfully) return;
-                if (t.Exception == null) return;
-                foreach (var inner in t.Exception.InnerExceptions)
-                {
-                    var exception = ExceptionDispatchInfo.Capture(inner);
-                    AsyncMainThreadSynchronization.Current.Schedule(() => exception.Throw());
-                }
-            }, ct);
+                await Awaitable.MainThreadAsync();
+                var exception = ExceptionDispatchInfo.Capture(e);
+                new GameObject("Temp").AddComponent<AsyncExceptionThrower>().Throw(exception);
+            }
         }
-    
-        public static void DispatchBlocking(AsyncFunction function, CancellationToken ct = default) => function(ct).GetAwaiter().GetResult();
-        public static void SetMainThread() => AsyncMainThreadSynchronization.Create();
+    }
+
+    public class AsyncExceptionThrower : MonoBehaviour
+    {
+        private ExceptionDispatchInfo exception;
+        private bool canThrow = false;
+        public void Throw(ExceptionDispatchInfo e)
+        {
+            exception = e;
+            canThrow = true;
+        }
+
+        private void Update()
+        {
+            if (canThrow)
+            {
+                DestroyImmediate(gameObject);
+                exception.Throw();
+            }
+        }
     }
 }
