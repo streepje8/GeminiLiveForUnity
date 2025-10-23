@@ -96,7 +96,7 @@ The Gemini Live for Unity integration provides several session-related events th
 | `GeminiJsonPacketReceived` | Triggered when **raw JSON data** is received from the Gemini WebSocket. |
 | `GeminiLiveEvent` | A **catch-all event** that fires for *any* Gemini-related event in the session. |
 
-> 💡 Use these events to hook your own scripts up to the gemini session.
+> 💡 Use these events via `Session.AddListener<>()` and `Session.RemoveListener<>()` to hook your own scripts up to the gemini session.
 ---
 
 ## 🗺️ Future Roadmap
