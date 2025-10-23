@@ -1,0 +1,29 @@
+{
+	"name": "com.wezzelnl.geminiliveforunity",
+	"version": "1.0.0",
+	"displayName": "Gemini Live for Unity",
+	"description": "This package allows the usage of Gemini Live with websockets through a unity friendly C# API",
+	"unity": "6000.0",
+	"unityRelease": "59f2",
+	"dependencies": {
+		"com.unity.nuget.newtonsoft-json": "3.2.1"
+	},
+	"keywords": [
+		"Gemini",
+		"Live",
+		"Websocket"
+	],
+	"author": {
+		"name": "WezzelNL",
+		"email": "contact@wezzel.nl",
+		"url": "https://wezzel.nl"
+	},
+	"samples": [
+        {
+            "displayName": "Script Usage",
+            "description": "Contains an example on how to use the API",
+            "path": "Samples~/Usage"
+        }
+    ]
+}
+
