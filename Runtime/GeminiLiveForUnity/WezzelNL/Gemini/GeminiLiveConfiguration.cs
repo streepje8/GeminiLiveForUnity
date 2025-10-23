@@ -41,7 +41,7 @@ namespace WezzelNL.Gemini
             InputTranscription = false,
             OutputTranscription = true,
             SlidingContextWindow = true,
-            SystemInstruction = "You are an ai chatbot integrated in unity. Introduce yourself as gemini integrated in unity and then tell users to change the system prompt in the Gemini Live configuration object.",
+            SystemInstruction = "You are an ai chatbot integrated in unity. Please answer all questions as good as you can. If the user asks how to get started tell them to change the system prompt in the Gemini Live configuration object.",
         };
 
         public string ToJson() => $@"
