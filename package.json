@@ -5,6 +5,9 @@
 	"description": "This package allows the usage of Gemini Live with websockets through a unity friendly C# API",
 	"unity": "6000.0",
 	"unityRelease": "59f2",
+	"license": "BUSL-1.1",
+	"changelogUrl": "https://github.com/streepje8/GeminiLiveForUnity/blob/master/CHANGELOG.md",
+	"documentationUrl": "https://github.com/streepje8/GeminiLiveForUnity/wiki/How-to-use-the-integration",
 	"dependencies": {
 		"com.unity.nuget.newtonsoft-json": "3.2.1"
 	},

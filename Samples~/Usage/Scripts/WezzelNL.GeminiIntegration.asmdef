@@ -1,0 +1,17 @@
+{
+    "name": "WezzelNL.GeminiIntegration.Samples",
+    "rootNamespace": "",
+    "references": [
+        "WezzelNL.GeminiIntegration",
+        "Unity.TextMeshPro"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

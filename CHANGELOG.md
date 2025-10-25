@@ -18,3 +18,4 @@ The first release of the gemini live for unity api
 - New Event 'GeminiTurnEndEvent' (When the AI finishes talking)
 - Usage Metrics Support
 - New Event 'GeminiReceiveUsageMetricsEvent' (When Usage Metrics are Received)
+- Stability Changes
