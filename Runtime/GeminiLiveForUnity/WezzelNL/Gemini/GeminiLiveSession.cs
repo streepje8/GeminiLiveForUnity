@@ -45,10 +45,11 @@ namespace WezzelNL.Gemini
                     Options = { }
                 };
                 await Socket.ConnectAsync(new Uri($"{WebsocketUri}?key={AccessToken.AccessToken}"), ct);
+                if(Socket.State == WebSocketState.Open) socketIsOpen = true;
                 await ConfigureSessionAsync(ct);
                 SessionActive = true;
                 SessionState = SessionState.SettingUp;
-                await EventHandlerInvokeAsync(new GeminiSessionStartEvent());
+                await EventHandlerInvokeAsync(new GeminiSessionStartEvent(), ct);
                 await ListenToSocketAsync(ct);
             }
             catch (Exception e)
@@ -67,15 +68,27 @@ namespace WezzelNL.Gemini
         public async Task EndSessionAsync(CancellationToken ct)
         {
             if (!SessionActive) return;
-            if (Socket is not null)
-            {
-                if(Socket.State == WebSocketState.Open) await Socket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Client Disconnect", ct);
-                Socket.Dispose();
-            }
-            Socket = null;
+            await CloseSocketAsync(ct);
             SessionActive = false;
             SessionState = SessionState.NotConnected;
-            await EventHandlerInvokeAsync(new GeminiSessionEndEvent());
+            await EventHandlerInvokeAsync(new GeminiSessionEndEvent(), ct);
+        }
+
+        private bool socketIsOpen = false;
+        public async Task CloseSocketAsync(CancellationToken ct)
+        {
+            if (!socketIsOpen) return;
+            socketIsOpen = false;
+            if (Socket is not null)
+            {
+                if (Socket.State == WebSocketState.Open)
+                {
+                    try { await Socket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Client Disconnect", ct); }
+                    catch (Exception) { try { Socket.Dispose(); } catch(Exception) { /* ignored */ } }
+                }
+                else try { Socket.Dispose(); } catch(Exception) { /* ignored */ }
+            }
+            Socket = null;
         }
 
         public async Task PromptAsync(string prompt, CancellationToken ct)
@@ -83,7 +96,7 @@ namespace WezzelNL.Gemini
             if (!SessionActive) throw new GeminiLiveException("Cannot prompt while no session is active!");
             var sanitized = GeminiPromptSanitizer.FullSanitize(prompt);
             if (string.IsNullOrWhiteSpace(sanitized)) return;
-            await EventHandlerInvokeAsync(new GeminiPromptedEvent(prompt, sanitized));
+            await EventHandlerInvokeAsync(new GeminiPromptedEvent(prompt, sanitized), ct);
             await SocketSendJsonAsync($@"
 {{
     ""realtimeInput"": {{
@@ -93,7 +106,7 @@ namespace WezzelNL.Gemini
 ", ct);
         }
         
-        public delegate Task GeminiEventHandler<T>(T evt) where T : GeminiLiveEvent;
+        public delegate Task GeminiEventHandler<T>(T evt, CancellationToken ct) where T : GeminiLiveEvent;
         internal static class GeminiEventHandlers<T> where T : GeminiLiveEvent
         {
             public static readonly List<GeminiEventHandler<T>> EventHandlers = new List<GeminiEventHandler<T>>();
@@ -108,18 +121,18 @@ namespace WezzelNL.Gemini
             GeminiEventHandlers<T>.EventHandlers.Remove(handler); 
         }
         
-        private async Task EventHandlerInvokeAsync<T>(T evt) where T : GeminiLiveEvent
+        private async Task EventHandlerInvokeAsync<T>(T evt, CancellationToken ct) where T : GeminiLiveEvent
         {
             //In case the user is listening to all events
             foreach (var baseEventHandler in GeminiEventHandlers<GeminiLiveEvent>.EventHandlers)
             {
-                try { await baseEventHandler(evt); }
+                try { await baseEventHandler(evt, ct); }
                 catch (Exception e) { Debug.LogException(e); }
             }
             
             foreach (var handler in GeminiEventHandlers<T>.EventHandlers)
             {
-                try { await handler(evt); }
+                try { await handler(evt, ct); }
                 catch (Exception e) { Debug.LogException(e); }
             }
         }
@@ -165,14 +178,14 @@ namespace WezzelNL.Gemini
                 
                 if (result.MessageType == WebSocketMessageType.Close)
                 {
-                    await EventHandlerInvokeAsync(new GeminiServerClosedSessionEvent(Socket.CloseStatus, Socket.CloseStatusDescription));
+                    await EventHandlerInvokeAsync(new GeminiServerClosedSessionEvent(Socket.CloseStatus, Socket.CloseStatusDescription), ct);
                     await EndSessionAsync(ct);
                     return;
                 }
 
             
                 var message = Encoding.UTF8.GetString(buffer, 0, result.Count);
-                while (!result.EndOfMessage)
+                while (!result.EndOfMessage && !ct.IsCancellationRequested)
                 {
                     try { result = await Socket.ReceiveAsync(segment, ct); }
                     catch (OperationCanceledException) { return; }
@@ -184,42 +197,82 @@ namespace WezzelNL.Gemini
                     message += Encoding.UTF8.GetString(buffer, 0, result.Count);
                 }
 
-                await HandleIncomingJsonPacketAsync(message);
+                if(!ct.IsCancellationRequested) await HandleIncomingJsonPacketAsync(message, ct);
             }
         }
 
         private void HandleSocketReceiveException(WebSocketException socketException, ExceptionDispatchInfo capture) => ExceptionHandler(new GeminiLiveListeningException(socketException, capture));
         
-        private async Task HandleIncomingJsonPacketAsync(string json)
+        private async Task HandleIncomingJsonPacketAsync(string json, CancellationToken ct)
         {
-            await EventHandlerInvokeAsync(new GeminiJsonPacketReceived(json));
+            await EventHandlerInvokeAsync(new GeminiJsonPacketReceived(json), ct);
             if (JToken.Parse(json) is JObject packet)
             {
-                if (packet.TryGetValue("serverContent", out var serverContentRaw) && serverContentRaw is JObject serverContent) await HandleServerContentAsync(serverContent);
+                if (packet.TryGetValue("serverContent", out var serverContentRaw) && serverContentRaw is JObject serverContent) await HandleServerContentAsync(serverContent, ct);
                 if (packet.TryGetValue("setupComplete", out _))
                 {
                     SessionState = SessionState.Ready;
-                    await EventHandlerInvokeAsync<GeminiSessionReadyEvent>(new GeminiSessionReadyEvent());
+                    await EventHandlerInvokeAsync(new GeminiSessionReadyEvent(), ct);
                 }
+                if(packet.TryGetValue("usageMetadata", out var usageMetadataRaw) && usageMetadataRaw is JObject usageMetadata) await HandleUsageMetadataAsync(usageMetadata, ct);
             } else ExceptionHandler(new GeminiLiveException($"Received invalid json: '{json}'"));
         }
 
-        private async Task HandleServerContentAsync(JObject serverContent)
+        private async Task HandleUsageMetadataAsync(JObject usageMetadata, CancellationToken ct)
         {
-            if (serverContent.TryGetValue("modelTurn", out var modelTurnRaw) && modelTurnRaw is JObject modelTurn) await HandleModelTurnAsync(modelTurn);
-            if (serverContent.TryGetValue("outputTranscription", out var modelOutputTranscriptionRaw) && modelOutputTranscriptionRaw is JObject modelOutputTranscription) await HandleTranscriptionAsync(GeminiTransciption.Output, modelOutputTranscription);
-            if (serverContent.TryGetValue("inputTranscription", out var modelInputTranscriptionRaw) && modelInputTranscriptionRaw is JObject modelInputTranscription) await HandleTranscriptionAsync(GeminiTransciption.Input, modelInputTranscription);
+            var promptTokenCount = 0;
+            var responseTokenCount = 0;
+            var totalTokenCount = 0;
+            var promptTokenDetails = new List<GeminiTokenDetail>();
+            var responseTokenDetails = new List<GeminiTokenDetail>();
+            if (usageMetadata.TryGetValue("promptTokenCount", out var promptTokenCountRaw) && promptTokenCountRaw is JValue ptcValue && ptcValue.Value is long ptc) promptTokenCount = checked((int)ptc);
+            if (usageMetadata.TryGetValue("responseTokenCount", out var responseTokenCountRaw) && responseTokenCountRaw is JValue rtcValue && rtcValue.Value is long rtc) responseTokenCount = checked((int)rtc);
+            if (usageMetadata.TryGetValue("totalTokenCount", out var totalTokenCountRaw) && totalTokenCountRaw is JValue ttcValue && ttcValue.Value is long ttc) totalTokenCount = checked((int)ttc);
+            if (usageMetadata.TryGetValue("promptTokensDetails", out var promptTokenDetailsRaw) && promptTokenDetailsRaw is JArray promptTokenDetailsJson)
+            {
+                foreach (var promptTokenDetailRaw in promptTokenDetailsJson)
+                {
+                    if (promptTokenDetailRaw is JObject promptTokenDetail) promptTokenDetails.Add(ParseTokenDetail(promptTokenDetail));
+                }
+            }
+            if (usageMetadata.TryGetValue("responseTokensDetails", out var responseTokenDetailsRaw) && responseTokenDetailsRaw is JArray responseTokenDetailsJson)
+            {
+                foreach (var responseTokenDetailRaw in responseTokenDetailsJson)
+                {
+                    if (responseTokenDetailRaw is JObject responseTokenDetail) responseTokenDetails.Add(ParseTokenDetail(responseTokenDetail));
+                }
+            }
+
+            await EventHandlerInvokeAsync(new GeminiReceiveUsageMetricsEvent(promptTokenCount, responseTokenCount, totalTokenCount, promptTokenDetails, responseTokenDetails), ct);
         }
 
-        private async Task HandleTranscriptionAsync(GeminiTransciption transcriptionType, JObject transcription)
+        private GeminiTokenDetail ParseTokenDetail(JObject tc)
+        {
+            var modality = GeminiModality.Text;
+            var tokenCount = 0;
+            if (tc.TryGetValue("modality", out var modalityRaw) && modalityRaw is JValue modalityJson && modalityJson.Value is string modalityString && Enum.TryParse<GeminiModality>(modalityString, out var parsedModalilty)) modality = parsedModalilty;
+            if (tc.TryGetValue("tokenCount", out var tokenCountRaw) && tokenCountRaw is JValue tokenCountJson && tokenCountJson.Value is long parsedTokenCount) tokenCount = checked((int)parsedTokenCount);
+            return new GeminiTokenDetail(modality, tokenCount);
+        }
+
+        private async Task HandleServerContentAsync(JObject serverContent, CancellationToken ct)
+        {
+            if (serverContent.TryGetValue("modelTurn", out var modelTurnRaw) && modelTurnRaw is JObject modelTurn) await HandleModelTurnAsync(modelTurn, ct);
+            if (serverContent.TryGetValue("outputTranscription", out var modelOutputTranscriptionRaw) && modelOutputTranscriptionRaw is JObject modelOutputTranscription) await HandleTranscriptionAsync(GeminiTransciption.Output, modelOutputTranscription, ct);
+            if (serverContent.TryGetValue("inputTranscription", out var modelInputTranscriptionRaw) && modelInputTranscriptionRaw is JObject modelInputTranscription) await HandleTranscriptionAsync(GeminiTransciption.Input, modelInputTranscription, ct);
+            if (serverContent.TryGetValue("generationComplete", out var generationCompleteRaw) && generationCompleteRaw is JValue generationComplete && generationComplete.Value is bool gc && gc) await EventHandlerInvokeAsync(new GeminiGenerationCompleteEvent(), ct);
+            if (serverContent.TryGetValue("turnComplete", out var turnCompleteRaw) && turnCompleteRaw is JValue turnComplete && turnComplete.Value is bool tc && tc) await EventHandlerInvokeAsync(new GeminiTurnEndEvent(), ct);
+        }
+
+        private async Task HandleTranscriptionAsync(GeminiTransciption transcriptionType, JObject transcription, CancellationToken ct)
         {
             if (transcription.TryGetValue("text", out var textRaw) && textRaw is JValue jsonText && jsonText.Value is string text)
             {
-                await EventHandlerInvokeAsync(new GeminiTranscribeEvent(transcriptionType, text));
+                await EventHandlerInvokeAsync(new GeminiTranscribeEvent(transcriptionType, text), ct);
             }
         }
 
-        private async Task HandleModelTurnAsync(JObject modelTurn)
+        private async Task HandleModelTurnAsync(JObject modelTurn, CancellationToken ct)
         {
             if (modelTurn.TryGetValue("parts", out var partsRaw) && partsRaw is JArray parts)
             {
@@ -229,7 +282,7 @@ namespace WezzelNL.Gemini
                     if(partRaw is not JObject part) continue;
                     interactionParts.Add(GeminiInteractionPartParser.ParsePart(part));
                 }
-                await EventHandlerInvokeAsync(new GeminiSessionInteractionEvent(new GeminiInteraction(InteractionRole.Model, interactionParts)));
+                await EventHandlerInvokeAsync(new GeminiSessionInteractionEvent(new GeminiInteraction(InteractionRole.Model, interactionParts)), ct);
             }
         }
     }

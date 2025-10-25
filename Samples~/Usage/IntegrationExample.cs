@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
 using WezzelNL.Gemini;
@@ -19,7 +20,7 @@ public class IntegrationExample : MonoBehaviour
         Session.AddListener<GeminiServerClosedSessionEvent>(HandleServerClosure);
         AsyncDispatcher.DispatchNonBlocking(Session.StartSessionAsync, destroyCancellationToken);
     }
-    
+
     void  OnDisable()
     {
         Session.RemoveListener<GeminiSessionInteractionEvent>(HandleInteractionAsync);
@@ -31,7 +32,7 @@ public class IntegrationExample : MonoBehaviour
     //This will make it so you see the errors the server gives (if you get them at all)
     //Client errors will be thrown as exceptions, you can get those by setting Session.ExceptionHandler = YourErrorHandler;
     //The default exception handler is Debug.LogException
-    private Task HandleServerClosure(GeminiServerClosedSessionEvent evt)
+    private Task HandleServerClosure(GeminiServerClosedSessionEvent evt, CancellationToken ct)
     {
         Debug.LogError($"Server closed session with error '{evt.CloseStatus}', reason: {evt.ClosureReason}");
         return Task.CompletedTask;
@@ -41,7 +42,7 @@ public class IntegrationExample : MonoBehaviour
     [field: SerializeField]public StreamedAudioSource StreamingSource { get; private set; }
     public Queue<string> TextResponseQueue { get; } = new();
     private FloatDataStream stream;
-    private Task HandleInteractionAsync(GeminiSessionInteractionEvent evt)
+    private Task HandleInteractionAsync(GeminiSessionInteractionEvent evt, CancellationToken ct)
     {
         foreach (var part in evt.Interaction.Parts)
         {
@@ -62,7 +63,7 @@ public class IntegrationExample : MonoBehaviour
     }
 
     
-    private Task HandleTranscriptionAsync(GeminiTranscribeEvent evt)
+    private Task HandleTranscriptionAsync(GeminiTranscribeEvent evt, CancellationToken ct)
     {
         TextResponseQueue.Enqueue(evt.Text);
         return Task.CompletedTask;

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Net.WebSockets;
 
 namespace WezzelNL.Gemini
@@ -66,6 +67,28 @@ namespace WezzelNL.Gemini
         {
             PromptRaw = promptRaw;
             PromptSanitized = promptSanitized;
+        }
+    }
+
+    public class GeminiGenerationCompleteEvent : GeminiLiveEvent { }
+    
+    public class GeminiTurnEndEvent : GeminiLiveEvent { }
+    
+    public class GeminiReceiveUsageMetricsEvent : GeminiLiveEvent
+    {
+        public int PromptTokenCount { get; }
+        public int ResponseTokenCount { get; }
+        public int TotalTokenCount { get; }
+        public IEnumerable<GeminiTokenDetail> PromptTokenDetails { get; }
+        public IEnumerable<GeminiTokenDetail> ResponseTokenDetails { get; }
+
+        public GeminiReceiveUsageMetricsEvent(int promptTokenCount, int responseTokenCount, int totalTokenCount, IEnumerable<GeminiTokenDetail> promptTokenDetails, IEnumerable<GeminiTokenDetail> responseTokenDetails)
+        {
+            PromptTokenCount = promptTokenCount;
+            ResponseTokenCount = responseTokenCount;
+            TotalTokenCount = totalTokenCount;
+            PromptTokenDetails = promptTokenDetails;
+            ResponseTokenDetails = responseTokenDetails;
         }
     }
 }
