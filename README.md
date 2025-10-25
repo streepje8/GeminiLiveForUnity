@@ -94,6 +94,9 @@ The Gemini Live for Unity integration provides several session-related events th
 | `GeminiTranscribeEvent` | Triggered when a **transcription** (by Gemini) is received. |
 | `GeminiServerClosedSessionEvent` | Triggered when **Gemini’s server closes the session** — exceptions are thrown instead if this happens due to a client error. |
 | `GeminiJsonPacketReceived` | Triggered when **raw JSON data** is received from the Gemini WebSocket. |
+| `GeminiGenerationCompleteEvent` | Triggered when Gemini finishes generating its response. |
+| `GeminiTurnEndEvent` | Triggered when Gemini finishes speaking. |
+| `GeminiReceiveUsageMetricsEvent` | Triggered when Usage Metrics are Received from Google. (Token usage for last prompt) |
 | `GeminiLiveEvent` | A **catch-all event** that fires for *any* Gemini-related event in the session. |
 
 > 💡 Use these events via `Session.AddListener<>()` and `Session.RemoveListener<>()` to hook your own scripts up to the gemini session.
