@@ -17,10 +17,10 @@ public class IntegrationExample : MonoBehaviour
         Session.AddListener<GeminiSessionInteractionEvent>(HandleInteractionAsync);
         Session.AddListener<GeminiTranscribeEvent>(HandleTranscriptionAsync);
         Session.AddListener<GeminiServerClosedSessionEvent>(HandleServerClosure);
-        AsyncDispatcher.SetMainThread(); 
         AsyncDispatcher.DispatchNonBlocking(Session.StartSessionAsync, destroyCancellationToken);
     }
-    private void OnDisable()
+    
+    void  OnDisable()
     {
         Session.RemoveListener<GeminiSessionInteractionEvent>(HandleInteractionAsync);
         Session.RemoveListener<GeminiTranscribeEvent>(HandleTranscriptionAsync);
