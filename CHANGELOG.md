@@ -8,7 +8,7 @@ The first release of the gemini live for unity api
 - Added Sliding Context Window 
 
 # Version 1.0.1
-The first release of the gemini live for unity api
+New events and stabilty changes
 
 - Move AsyncDispatcher to main library
 - Simplified AsyncDispatcher
