@@ -6,6 +6,7 @@
         private int writePos = 0;
         private int readPos = 0;
         private int count = 0;
+        private int bufferDelta = 0;
         private readonly object lockObj = new();
 
         public FloatDataStream(int capacity)
@@ -17,6 +18,7 @@
         {
             lock (lockObj)
             {
+                bufferDelta += samples.Length;
                 foreach (var sample in samples)
                 {
                     buffer[writePos] = sample;
@@ -49,6 +51,13 @@
             for (int i = readSamples; i < targetBuffer.Length; i++) targetBuffer[i] = 0f;
 
             return readSamples;
+        }
+
+        public int ReadBufferDelta()
+        {
+            var copy = bufferDelta;
+            bufferDelta = 0;
+            return copy;
         }
     }
 }
