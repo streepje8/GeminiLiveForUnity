@@ -11,7 +11,7 @@ namespace WezzelNL.Gemini
         [field: SerializeField]public GenerationConfiguration GenerationConfiguration { get; set; }
         [field: SerializeField]public bool InputTranscription { get; set; }
         [field: SerializeField]public bool OutputTranscription { get; set; }
-        [field: SerializeField]public string SystemInstruction { get; set; }
+        [field: SerializeField, TextArea]public string SystemInstruction { get; set; }
         [field: SerializeField]public bool SlidingContextWindow { get; set; }
     
         public static readonly GeminiLiveConfiguration Default = new GeminiLiveConfiguration()
