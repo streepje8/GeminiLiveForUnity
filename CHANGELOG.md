@@ -19,3 +19,9 @@ New events and stabilty changes
 - Usage Metrics Support
 - New Event 'GeminiReceiveUsageMetricsEvent' (When Usage Metrics are Received)
 - Stability Changes
+
+# Version 1.0.2
+New events and stabilty changes
+
+- The system prompt is now a text field
+- Added extension methods and events to make connecting gemini to audio sources and other systems easier (GeminiSession.AddPlayback (implemented in GeminiSessionExtensions))

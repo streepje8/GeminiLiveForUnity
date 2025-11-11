@@ -1,6 +1,6 @@
 {
 	"name": "com.wezzelnl.geminiliveforunity",
-	"version": "1.0.1",
+	"version": "1.0.2",
 	"displayName": "Gemini Live for Unity",
 	"description": "This package allows the usage of Gemini Live with websockets through a unity friendly C# API",
 	"unity": "6000.0",
