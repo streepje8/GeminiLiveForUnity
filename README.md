@@ -61,7 +61,7 @@ This integration simply provides a Unity-compatible interface for interacting wi
    * Enter the following URL:
 
      ```
-     https://github.com/streepje8/GeminiLiveForUnity.git
+     https://github.com/Wezzel-NL/GeminiLiveForUnity.git
      ```
    * Click **Add** and wait for Unity to import and compile the package.
 
