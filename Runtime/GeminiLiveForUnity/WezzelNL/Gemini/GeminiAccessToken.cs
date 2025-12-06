@@ -1,10 +1,12 @@
 ﻿using System;
+using UnityEngine;
 
 namespace WezzelNL.Gemini
 {
-    public readonly struct GeminiAccessToken : IEquatable<GeminiAccessToken> 
+	[Serializable]
+    public struct GeminiAccessToken : IEquatable<GeminiAccessToken> 
     {
-        public string AccessToken { get; }
+        [field: SerializeField]public string AccessToken { get; private set; }
 
         private GeminiAccessToken(string accessToken)
         {
